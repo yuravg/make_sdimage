@@ -463,10 +463,12 @@ def get_mkfs_from_format(pformat):
 # map format to a command parameter
 def get_mkfs_params_from_format(pformat):
 
-    params = ""
+    params = []
 
+    if re.search("fat|vfat|fat32", pformat):
+        params.extend(['-I'])
     if re.search("fat32", pformat):
-        params = "-F 32"
+        params.extend(['-F', '32'])
 
     return params
 
@@ -476,13 +478,13 @@ def format_partition(loopback, fs_format):
 
     cmd = get_mkfs_from_format(fs_format)
     params = get_mkfs_params_from_format(fs_format)
+    cmd2run = []
+    cmd2run.append(cmd)
+    cmd2run.extend(params)
+    cmd2run.append(loopback)
     if cmd:
-        if params:
-            p = subprocess.Popen([cmd, loopback, params],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        else:
-            p = subprocess.Popen([cmd, loopback],
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(cmd2run,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         #RODO: add timeout?
         p.wait()
         if p.returncode != 0:
@@ -711,4 +713,3 @@ part_entries = check_and_update_part_entries(part_entries, image_size)
 # we now have what we need
 create_image(args.image_name, image_size, part_entries, args.force_erase_image)
 print "info: image created, file name is ", args.image_name
-
